@@ -231,7 +231,6 @@ export default function TableDisplay() {
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
-  const [data, setData] = useState([]);
   var rows = [];
   var tempRows = [];
 
