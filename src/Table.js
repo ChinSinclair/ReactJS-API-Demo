@@ -5,6 +5,13 @@ import clsx from 'clsx';
 import { lighten, makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
+// interface components
+import Box from '@material-ui/core/Box';
+import Paper from '@material-ui/core/Paper';
+
+// inputs and tags
+import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -14,17 +21,21 @@ import TablePagination from '@material-ui/core/TablePagination';
 import TableRow from '@material-ui/core/TableRow';
 import TableSortLabel from '@material-ui/core/TableSortLabel';
 import Checkbox from '@material-ui/core/Checkbox';
-import Button from '@material-ui/core/Button';
 
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
 
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
+
+// Icons 
+import InputAdornment from '@material-ui/core/InputAdornment';
+import SearchIcon from '@material-ui/icons/Search';
+import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import EditIcon from '@material-ui/icons/Edit';
+
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -185,13 +196,12 @@ const useStyles = makeStyles((theme) => ({
   root: {
     width: '100%',
   },
+  
   paper: {
     width: '100%',
     marginBottom: theme.spacing(2),
   },
-//   table: {
-//     minWidth: 750,
-//   },
+
   visuallyHidden: {
     border: 0,
     clip: 'rect(0 0 0 0)',
@@ -203,41 +213,110 @@ const useStyles = makeStyles((theme) => ({
     top: 20,
     width: 1,
   },
+
+  padding: {
+    marginLeft: theme.spacing(1)
+  }
 }));
 
 // default table display function
 export default function TableDisplay() {
-    const classes = useStyles();
-    const [order, setOrder] = React.useState('asc');
-    const [orderBy, setOrderBy] = React.useState('clientName');
-    const [selected, setSelected] = React.useState([]);
-    const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const classes = useStyles();
+  const [order, setOrder] = React.useState('asc');
+  const [orderBy, setOrderBy] = React.useState('clientName');
+  const [selected, setSelected] = React.useState([]);
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
-    const [error, setError] = useState(null);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [items, setItems] = useState([]);
-    var rows = [];
+  const [error, setError] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [items, setItems] = useState([]);
+  const [data, setData] = useState([]);
+  var rows = [];
+  var tempRows = [];
 
-    // Hook API data fetch with given link
-    useEffect(() => {
-        fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
-          .then(res => res.json())
-          .then(
-            (result) => {
-              setIsLoaded(true);
-              setItems(result);              
-            },
-            // Note: it's important to handle errors here
-            // instead of a catch() block so that we don't swallow
-            // exceptions from actual bugs in components.
-            (error) => {
-              setIsLoaded(true);
-              setError(error);
-            }
-          )
-      }, [])
-    
+  const [word, setWord] = useState([]);
+  
+  // Hook API data fetch with given link
+  useEffect(() => {
+    fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
+    .then(res => res.json())
+      .then(
+        (result) => {
+          setIsLoaded(true);
+          setItems(result);              
+        },
+        // Note: it's important to handle errors here
+        // instead of a catch() block so that we don't swallow
+        // exceptions from actual bugs in components.
+        (error) => {
+          setIsLoaded(true);
+          setError(error);
+        }
+      )
+  }, [])
+
+  // handle onSubmit event
+  const handleSubmit = (event) => {
+    // reset rows data
+    // rows = [];
+
+    // push item to rows if matches search word
+    items.map((item) => {
+      // only search within names and emails
+      if (item.clientName.toLowerCase().includes(word.toLowerCase()) || item.clientEmail.toLowerCase().includes(word.toLowerCase())) 
+        // push item to rows if matches search word
+        tempRows.push(createData(item.clientId, item.clientName, item.clientEmail, item.clientWorkPhone, item.clientIndustry, item.clientPocName, item.clientWebsite),)        
+    });
+
+    setItems(tempRows);
+    event.preventDefault();
+  };
+
+  const inputWord = (event) => {
+    // refresh items state after each search and when other search words are entered
+    fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
+    .then(res => res.json())
+      .then(
+        (result) => {
+          setIsLoaded(true);
+          setItems(result);              
+        },
+        // Note: it's important to handle errors here
+        // instead of a catch() block so that we don't swallow
+        // exceptions from actual bugs in components.
+        (error) => {
+          setIsLoaded(true);
+          setError(error);
+        }
+      )
+
+    // Set input search word with Hooks
+    setWord(event.target.value)              
+  }
+
+  const clearSearch = (event) => {
+    // clear textfield and refresh item state data
+    fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
+    .then(res => res.json())
+      .then(
+        (result) => {
+          setIsLoaded(true);
+          setItems(result);              
+        },
+        // Note: it's important to handle errors here
+        // instead of a catch() block so that we don't swallow
+        // exceptions from actual bugs in components.
+        (error) => {
+          setIsLoaded(true);
+          setError(error);
+        }
+      )
+
+    // set search word to empty string
+    setWord("");
+  }
+
   // sort in ascending or descending order
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -287,8 +366,6 @@ export default function TableDisplay() {
 
   const isSelected = (clientId) => selected.indexOf(clientId) !== -1;
 
-  const emptyRows = rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
-
   // checkers before pushing data to pre-defined rows variables for display
   // error and loading
   if (error) {
@@ -297,16 +374,46 @@ export default function TableDisplay() {
     return <div>Loading...</div>;
   } else {
     // map to push to rows, and display accordingly
-    {items.map((item) => (        
+    items.map((item) => (        
         // push function to call createData function defined to populate array
         rows.push(createData(item.clientId, item.clientName, item.clientEmail, item.clientWorkPhone, item.clientIndustry, item.clientPocName, item.clientWebsite),)
-    ))};
+    ));
   }
 
   // return full tables and data
   return (
     <React.Fragment>
         <CssBaseline />
+        {/* <SearchForm /> */}
+
+        <form autoComplete="off" onSubmit={handleSubmit}>
+          <Box display="flex" flexWrap="wrap">
+            <Box p={1} flexGrow={1}>
+              <TextField id="outlined-basic" label="Search (Names/Emails)" variant="outlined" size="small" required
+                value={word} 
+                onChange={inputWord} 
+                InputProps={{
+                  // icon within textfield
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button variant="outlined" color="primary" type="submit" className={classes.padding}>SEARCH</Button> 
+              <Button variant="outlined" color="primary" type="reset" onClick={clearSearch} className={classes.padding}>CLEAR</Button>
+            </Box>
+            <Box p={1}>
+              <Button variant="outlined" color="primary"><AddIcon />NEW CLIENT</Button>
+            </Box>
+          </Box>
+        </form>
+
+        <br />
+
+        <searchResult />
+
         <div className={classes.root}>
         <Paper className={classes.paper}>
             <EnhancedTableToolbar numSelected={selected.length} />
@@ -329,36 +436,36 @@ export default function TableDisplay() {
                 {stableSort(rows, getComparator(order, orderBy))
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((row, index) => {
-                    const isItemSelected = isSelected(row.clientId);
-                    const labelId = `enhanced-table-checkbox-${index}`;
+                      const isItemSelected = isSelected(row.clientId);
+                      const labelId = `enhanced-table-checkbox-${index}`;
 
-                    return (
-                      <TableRow
-                        hover
-                        role="checkbox"
-                        aria-checked={isItemSelected}
-                        tabIndex={-1}
-                        key={row.clientId}
-                        selected={isItemSelected}
-                      >
-                        <TableCell padding="checkbox">
-                            <Checkbox
-                              onClick={(event) => handleClick(event, row.clientId)}
-                              checked={isItemSelected}
-                              inputProps={{ 'aria-labelledby': labelId }}
-                            />
-                        </TableCell>
-                        <TableCell component="th" id={labelId} scope="row" padding="none">
-                            {row.clientName}
-                        </TableCell>
-                        <TableCell align="right">{row.clientEmail}</TableCell>
-                        <TableCell align="right">{row.clientWorkPhone}</TableCell>
-                        <TableCell align="right">{row.clientIndustry}</TableCell>
-                        <TableCell align="right">{row.clientPocName}</TableCell>
-                        <TableCell align="right">{row.clientWebsite}</TableCell>
-                        <TableCell align="right"><Button variant="outlined" color="primary"><EditIcon /></Button></TableCell>
-                      </TableRow>
-                    );
+                      return (
+                        <TableRow
+                          hover
+                          role="checkbox"
+                          aria-checked={isItemSelected}
+                          tabIndex={-1}
+                          key={row.clientId}
+                          selected={isItemSelected}
+                        >
+                          <TableCell padding="checkbox">
+                              <Checkbox
+                                onClick={(event) => handleClick(event, row.clientId)}
+                                checked={isItemSelected}
+                                inputProps={{ 'aria-labelledby': labelId }}
+                              />
+                          </TableCell>
+                          <TableCell component="th" id={labelId} scope="row" padding="none">
+                              {row.clientName}
+                          </TableCell>
+                          <TableCell align="right">{row.clientEmail}</TableCell>
+                          <TableCell align="right">{row.clientWorkPhone}</TableCell>
+                          <TableCell align="right">{row.clientIndustry}</TableCell>
+                          <TableCell align="right">{row.clientPocName}</TableCell>
+                          <TableCell align="right">{row.clientWebsite}</TableCell>
+                          <TableCell align="right"><Button variant="outlined" color="primary"><EditIcon /></Button></TableCell>
+                        </TableRow>
+                      );                    
                     })}
                 </TableBody>
             </Table>
