@@ -5,8 +5,9 @@ import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Container from '@material-ui/core/Container';
+import Box from '@material-ui/core/Box';
 
-// Data.js import to display table data
+// Table.js import to display table data
 import Table from './Table';
 
 const useStyles = makeStyles((theme) => ({
@@ -29,11 +30,16 @@ function App() {
       <CssBaseline />
       <main className={classes.content}>
       <Container maxWidth="lg" className={classes.container}>
-        <h4>MANAGEMENT</h4>
-        <h1>Clients</h1>
+        <Box display="flex" flexWrap="wrap">
+          <Box p={1} flexGrow={1}>     
+            <h4>MANAGEMENT</h4>       
+            <h1>Clients</h1>
+          </Box>
+        </Box>   
         
         {/* Table.js, API data fetching, displaying, and searching */}
         <Table />
+
       </Container>
       </main>
     </div>

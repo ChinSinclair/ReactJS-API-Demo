@@ -8,6 +8,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 // interface components
 import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
+import Grid from '@material-ui/core/Grid';
 
 // inputs and tags
 import TextField from '@material-ui/core/TextField';
@@ -31,11 +32,12 @@ import Tooltip from '@material-ui/core/Tooltip';
 // Icons 
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SearchIcon from '@material-ui/icons/Search';
-import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import EditIcon from '@material-ui/icons/Edit';
-
+import AddIcon from '@material-ui/icons/Add';
+import CancelIcon from '@material-ui/icons/Cancel';
+import LanguageIcon from '@material-ui/icons/Language';
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -216,12 +218,18 @@ const useStyles = makeStyles((theme) => ({
 
   padding: {
     marginLeft: theme.spacing(1)
-  }
+  },
+
+  paperAdd: {
+    width: '100%',
+    padding: theme.spacing(2),
+  },
 }));
 
 // default table display function
 export default function TableDisplay() {
   const classes = useStyles();
+
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('clientName');
   const [selected, setSelected] = React.useState([]);
@@ -235,15 +243,29 @@ export default function TableDisplay() {
   var tempRows = [];
 
   const [word, setWord] = useState([]);
-  
+  const [activePage, setActivePage] = React.useState(0);
+
+  // Add Client form inputs
+  const [cName, setCName] = useState([]);
+  const [cEmail, setCEmail] = useState([]);
+  const [cPhone, setCPhone] = useState([]);
+  const [cIndustry, setCIndustry] = useState([]);
+  const [cPName, setCPName] = useState([]);
+  const [cWebsite, setCWebsite] = useState([]);
+  const [tempData, setTempData] = useState([]);
+  const [finalItems, setFinalItems] = useState([]);
+  const [idCounter, setIdCounter] = useState(123123123);
+
   // Hook API data fetch with given link
   useEffect(() => {
     fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
     .then(res => res.json())
       .then(
         (result) => {
+          tempRows = [];
           setIsLoaded(true);
-          setItems(result);              
+          setItems(result); 
+          setFinalItems(result);          
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
@@ -255,53 +277,120 @@ export default function TableDisplay() {
       )
   }, [])
 
+  // increase counter by one to display add client form
+  const handleUp = () => {
+    setActivePage(activePage + 1);
+  };
+
+  // decrease; hide add client form counter (checker)
+  const handleDown = () => {
+    setActivePage(activePage - 1);
+  };
+  
+  // clear const state input variables
+  const clearInputs = (event) => {
+    // set search word to empty string
+    setCName("");
+    setCEmail("");
+    setCPhone("");
+    setCIndustry("");
+    setCPName("");
+    setCWebsite("");
+  }
+
+  // push newly added client to existing list
+  const handleInputsSubmit = (event) => {
+    // add data to new list
+    if (tempData.length === 0) {
+      setTempData([{
+        clientId: idCounter,
+        clientName: cName,
+        clientEmail: cEmail,
+        clientWorkPhone: cPhone,
+        clientIndustry: cIndustry,
+        clientPocName: cPName,
+        clientWebsite: cWebsite,
+      },]);
+    }
+    else {
+      // Spread operator, add new JSON object to existing objects without losing them when calling SetState function
+      setTempData(tempData => [
+        ...tempData, 
+        {
+          clientId: idCounter,
+          clientName: cName,
+          clientEmail: cEmail,
+          clientWorkPhone: cPhone,
+          clientIndustry: cIndustry,
+          clientPocName: cPName,
+          clientWebsite: cWebsite,
+        },
+      ]);
+    }
+
+    // increment id counter, dummy
+    setIdCounter(idCounter+1);
+
+    // clear inputs after submitting form
+    clearInputs();
+
+    // call data refresh after adding new client
+    refreshData();
+
+    event.preventDefault();
+  }
+
   // handle onSubmit event
   const handleSubmit = (event) => {
-    // reset rows data
-    // rows = [];
-
-    // push item to rows if matches search word
-    items.map((item) => {
+    finalItems.map((item) => {
       // only search within names and emails
       if (item.clientName.toLowerCase().includes(word.toLowerCase()) || item.clientEmail.toLowerCase().includes(word.toLowerCase())) 
         // push item to rows if matches search word
         tempRows.push(createData(item.clientId, item.clientName, item.clientEmail, item.clientWorkPhone, item.clientIndustry, item.clientPocName, item.clientWebsite),)        
     });
 
-    setItems(tempRows);
+    setFinalItems(tempRows);
     event.preventDefault();
   };
 
-  const inputWord = (event) => {
-    // refresh items state after each search and when other search words are entered
-    fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
-    .then(res => res.json())
-      .then(
-        (result) => {
-          setIsLoaded(true);
-          setItems(result);              
-        },
-        // Note: it's important to handle errors here
-        // instead of a catch() block so that we don't swallow
-        // exceptions from actual bugs in components.
-        (error) => {
-          setIsLoaded(true);
-          setError(error);
-        }
-      )
+  const inputWord = (event) => {    
+    // call data refresh after search
+    refreshData();
 
     // Set input search word with Hooks
     setWord(event.target.value)              
   }
 
   const clearSearch = (event) => {
-    // clear textfield and refresh item state data
+    // call data refresh after search
+    refreshData();
+
+    // set search word to empty string
+    setWord("");
+  }
+
+  function refreshData() {
+    // // Re-Hook API data fetch with given link
     fetch("http://javareesbyapi-env.eba-rtdeyeqd.ap-southeast-2.elasticbeanstalk.com/api/v1/getallclients/tenant/reesby")
     .then(res => res.json())
       .then(
         (result) => {
           setIsLoaded(true);
-          setItems(result);              
+          setItems(result);   
+
+          // map to push to rows, and display accordingly
+          items.map((item) => (
+            // push function to call createData function defined to populate array
+            tempRows.push(createData(item.clientId, item.clientName, item.clientEmail, item.clientWorkPhone, item.clientIndustry, item.clientPocName, item.clientWebsite),)
+          ));
+          
+          if (tempData.length > 0) {
+            for (var i = 0; i < tempData.length; i++) {                
+              tempRows.push(createData(tempData[i].clientId, tempData[i].clientName, tempData[i].clientEmail, tempData[i].clientWorkPhone, 
+                tempData[i].clientIndustry, tempData[i].clientPocName, tempData[i].clientWebsite),)        
+            }
+          }
+          setFinalItems(tempRows);
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
@@ -311,9 +400,6 @@ export default function TableDisplay() {
           setError(error);
         }
       )
-
-    // set search word to empty string
-    setWord("");
   }
 
   // sort in ascending or descending order
@@ -326,7 +412,7 @@ export default function TableDisplay() {
   // checkbox select all
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = items.map((item) => item.clientId);
+      const newSelecteds = finalItems.map((item) => item.clientId);
       setSelected(newSelecteds);
       return;
     }
@@ -373,9 +459,9 @@ export default function TableDisplay() {
     return <div>Loading...</div>;
   } else {
     // map to push to rows, and display accordingly
-    items.map((item) => (        
-        // push function to call createData function defined to populate array
-        rows.push(createData(item.clientId, item.clientName, item.clientEmail, item.clientWorkPhone, item.clientIndustry, item.clientPocName, item.clientWebsite),)
+    finalItems.map((item) => (
+      // push function to call createData function defined to populate array
+      rows.push(createData(item.clientId, item.clientName, item.clientEmail, item.clientWorkPhone, item.clientIndustry, item.clientPocName, item.clientWebsite),)
     ));
   }
 
@@ -384,8 +470,122 @@ export default function TableDisplay() {
     <React.Fragment>
         <CssBaseline />
         {/* <SearchForm /> */}
+        {/* <addClient /> */}
+        <p>Result (JSON): {JSON.stringify(tempData)}</p>
+
+        {/* display page based on button clicked */}
+        {/* {getPageContent(activePage)} */}
+        {activePage === 1 && (
+            <Paper className={classes.paperAdd}>
+              <Typography variant="h6" gutterBottom>
+                  Add New Clients
+              </Typography>
+              <form autoComplete="off" onSubmit={handleInputsSubmit} >
+                  <Grid container spacing={3}>
+                      <Grid item xs={12}>
+                          <TextField
+                              required
+                              id="clientName"
+                              name="clientName"
+                              label="Client Name"
+                              fullWidth
+                              variant="outlined" size="small"
+                              value={cName} 
+                              onChange={(e) => {
+                                  setCName(e.target.value)
+                              }}
+                          />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                          <TextField
+                              required
+                              id="clientEmail"
+                              name="clientEmail"
+                              label="Email Address"
+                              fullWidth
+                              variant="outlined" size="small"
+                              value={cEmail} 
+                              onChange={(e) => {
+                                  setCEmail(e.target.value)
+                              }}
+                          />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                          <TextField
+                              required
+                              id="clientWorkPhone"
+                              name="clientWorkPhone"
+                              label="Work Phone Number"
+                              fullWidth
+                              variant="outlined" size="small"
+                              value={cPhone} 
+                              onChange={(e) => {
+                                  setCPhone(e.target.value)
+                              }}
+                          />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                          <TextField
+                              required
+                              id="clientIndustry"
+                              name="clientIndustry"
+                              label="Industry"
+                              fullWidth
+                              variant="outlined" size="small"
+                              value={cIndustry} 
+                              onChange={(e) => {
+                                  setCIndustry(e.target.value)
+                              }}
+                          />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                          <TextField
+                              required
+                              id="clientPocName"
+                              name="clientPocName"
+                              label="Point of Contact"
+                              fullWidth
+                              variant="outlined" size="small"
+                              value={cPName}
+                              onChange={(e) => {
+                                  setCPName(e.target.value)
+                              }}
+                          />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                          <TextField                        
+                              id="clientWebsite"
+                              name="clientWebsite"
+                              label="Website"
+                              fullWidth
+                              variant="outlined" size="small"
+                              value={cWebsite} 
+                              onChange={(e) => {
+                                  setCWebsite(e.target.value)
+                              }}
+                              InputProps={{
+                              // icon within textfield
+                              startAdornment: (
+                                  <InputAdornment position="start">
+                                  <LanguageIcon />
+                                  </InputAdornment>
+                              ),
+                              }}
+                          />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                      </Grid>
+      
+                      <Button variant="outlined" color="primary" type="submit" className={classes.padding}>ADD</Button> 
+                      <Button variant="outlined" color="primary" type="reset" onClick={clearInputs} className={classes.padding}>CLEAR</Button>
+                  </Grid>
+              </form>
+              <br />
+            </Paper>
+        )}       
 
         <form autoComplete="off" onSubmit={handleSubmit}>
+        <br />
           <Box display="flex" flexWrap="wrap">
             <Box p={1} flexGrow={1}>
               <TextField id="outlined-basic" label="Search (Names/Emails)" variant="outlined" size="small" required
@@ -403,9 +603,21 @@ export default function TableDisplay() {
               <Button variant="outlined" color="primary" type="submit" className={classes.padding}>SEARCH</Button> 
               <Button variant="outlined" color="primary" type="reset" onClick={clearSearch} className={classes.padding}>CLEAR</Button>
             </Box>
-            <Box p={1}>
-              <Button variant="outlined" color="primary"><AddIcon />NEW CLIENT</Button>
-            </Box>
+            <Box display="flex" flexWrap="wrap">
+              <Box p={1}>
+                {/* Show and Hide Add Client form */}
+                {activePage === 0 && (
+                  <Button variant="outlined" color="primary" onClick={handleUp}>
+                    <AddIcon />Add Client
+                  </Button>
+                )}
+                {activePage === 1 && (
+                  <Button variant="outlined" color="primary" onClick={handleDown}>
+                    <CancelIcon />Cancel
+                  </Button>
+                )}
+              </Box>
+            </Box> 
           </Box>
         </form>
 
@@ -470,13 +682,13 @@ export default function TableDisplay() {
             </Table>
             </TableContainer>
             <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={rows.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={rows.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
             />
         </Paper>
         </div>
